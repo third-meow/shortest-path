@@ -1,6 +1,45 @@
 #include<bits/stdc++.h>
 using namespace std;
 
+vector<double> construct_times;
+vector<double> sort_times;
+vector<double> pop_times;
+vector<double> push_times;
+
+struct Timer {
+	vector<double>* vec;
+	string name;
+	chrono::time_point<chrono::high_resolution_clock> start;
+	chrono::time_point<chrono::high_resolution_clock> end;
+	chrono::duration<double> duration;
+
+
+	Timer() {
+		name = "unnamed";
+		start = chrono::high_resolution_clock::now();
+	}
+
+	Timer(vector<double>* init_vec) {
+		vec = init_vec;
+		start = chrono::high_resolution_clock::now();
+	}
+
+	Timer(string init_name) {
+		name = init_name;
+		start = chrono::high_resolution_clock::now();
+	}
+
+	~Timer() {
+		end = chrono::high_resolution_clock::now();
+		duration = end - start;
+
+		double ms = duration.count() * 1000.0f;
+		if (name.size()) 
+			cout << "timer: " << name << " took: " << ms << endl;
+		else if (vec != nullptr)
+			vec->push_back(ms);
+	}
+};
 
 struct sort_edges_key{
     inline bool operator() (const vector<int> a, const vector<int> b) {
@@ -50,14 +89,16 @@ class Queue {
 };
 
 Queue::Queue(Node init_node) {
+	Timer t(&construct_times);
 	data = {init_node};
 	data[0].path = {data[0].id};
 }
 
 void Queue::sort() {
+	Timer t(&sort_times);
 	struct data_sort_key{
 			inline bool operator() (const Node a, const Node b) {
-					return (a.dis < b.dis);
+					return (a.dis > b.dis);
 			}
 	};
 
@@ -66,17 +107,15 @@ void Queue::sort() {
 
 
 void Queue::push(Node n){
+	Timer t(&push_times);
 	data.push_back(n);
 }
 
 Node Queue::pop() {
-	if (data.empty() == false) {
-		Node n = data[0];
-		data.erase(data.begin());
-		return n;
-	} else {
-		cout << "queue empty" << endl;
-	}
+	Timer t(&pop_times);
+	Node n = data.back();
+	data.pop_back();
+	return n;
 }
 
 
@@ -85,6 +124,16 @@ vector<vector<int>> adj_list;
 vector<int> distances;
 int target;
 
+double avgVec(vector<double>* vec) {
+	double total;
+	double len = (double) vec->size();
+
+	for(auto e : *vec)
+		total += e;
+
+	return total / len;
+}
+
 
 int main(int argc, char *argv[]) {
 	int vertex_n, start;
@@ -92,6 +141,7 @@ int main(int argc, char *argv[]) {
 	cin >> start >> target;
 
 	{
+		Timer t("read-input");
 		string line;
 		int a,b;
 		getline(cin, line); //TRASH FIRST LINE
@@ -102,22 +152,30 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	for(int i = 0; i < vertex_n; ++i)
-		adj_list.push_back({});
+	{
+		Timer t("build adj list");
+		for(int i = 0; i < vertex_n; ++i)
+			adj_list.push_back({});
 
-	for(auto e : edges)
-		adj_list[e[0]].push_back(e[1]);
-	
-	for(int i = 0; i < vertex_n; ++i) {
-		if (i == start)
-			distances.push_back(0);
-		else
-			distances.push_back(-1);
+		for(auto e : edges)
+			adj_list[e[0]].push_back(e[1]);
 	}
+
+	{
+		Timer t("build distances list");
+		for(int i = 0; i < vertex_n; ++i) {
+			if (i == start)
+				distances.push_back(0);
+			else
+				distances.push_back(-1);
+		}
+	}
+
 
 	if (start == target) {
 		cout << start;
 	} else {
+		Timer t("shortest path algo");
 		Queue q(Node(start, 0));
 
 		bool found = false;
@@ -126,9 +184,10 @@ int main(int argc, char *argv[]) {
 
 			for(int connected : adj_list[n.id]) {
 				if (connected == target) {
-					for(auto v: n.path) 
-						cout << v << " ";
-					cout << target;
+					//for(auto v: n.path) 
+						//cout << v << " ";
+					//cout << target;
+					cout << "found" << endl;
 					found = true;
 					break;
 				} else {
@@ -140,6 +199,10 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
+		cout << "avg construct time: " << avgVec(&construct_times) << endl;
+		cout << "avg sort time: " << avgVec(&sort_times) << endl;
+		cout << "avg pop time: " << avgVec(&pop_times) << endl;
+		cout << "avg push time: " << avgVec(&push_times) << endl;
 	}
 	return 0;
 }
