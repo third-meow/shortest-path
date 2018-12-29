@@ -194,10 +194,10 @@ int main(int argc, char *argv[]) {
 					if (distances[connected] == -1) {
 						distances[connected] = n.dis + 1;
 						q.push(Node(connected, n.dis+1, n.path));
-						q.sort();
 					}
 				}
 			}
+			q.sort();
 		}
 		cout << "avg construct time: " << avgVec(&construct_times) << endl;
 		cout << "avg sort time: " << avgVec(&sort_times) << endl;
