@@ -1,6 +1,7 @@
 #include<bits/stdc++.h>
 using namespace std;
 
+
 struct sort_edges_key{
     inline bool operator() (const vector<int> a, const vector<int> b) {
 			if (a[0] == b[0]) {
@@ -11,107 +12,125 @@ struct sort_edges_key{
     }
 };
 
-class Crawler {
-	private:
-		vector<int> _path;
-		int _node;
-	public:
-		bool active;
+struct Node {
+		int id;
+		int dis;
+		vector<int> path;
 
-		Crawler(int start_node) {
-			active = true;
-			_node = start_node;
-			_path = {_node};
+		Node(int init_id) {
+			id = init_id;
+			dis = -1;
+			path = {id};
 		}
 
-		Crawler(int start_node, vector<int> start_path) {
-			active = true;
-			_node = start_node;
-			_path = start_path;
-			_path.push_back(_node);
+		Node(int init_id, int init_dis) {
+			id = init_id;
+			dis = init_dis;
+			path = {id};
 		}
 
-		bool step();
+		Node(int init_id, int init_dis, vector<int> init_path) {
+			id = init_id;
+			dis = init_dis;
+			path = init_path;
+			path.push_back(id);
+		}
 };
 
-vector<Crawler> crawlers;
-vector<vector<int>> edges;
-vector<int> seen;
-int target;
+class Queue {
+	public:
+		vector<Node> data;
+		Queue(Node init_node);
+		Queue(vector<Node> init_data);
+		void sort();
+		//adds element to back
+		void push(Node);
+		//returns (and removes)element at front
+		Node pop();
+};
 
-bool contains(int element) {
-	for(auto e : seen)
-		if (e == element)
-			return true;
-	return false;
+Queue::Queue(Node init_node) {
+	data = {init_node};
+	data[0].path = {data[0].id};
 }
 
-bool Crawler::step() {
-	vector<int> unseen_neighbours;
-	for(auto e : edges) {
-		if(e[0] == _node) {
-			if(e[1] == target) {
-				for(auto v : _path)
-					cout << v << " ";
-				cout << target;
-				return true;
+void Queue::sort() {
+	struct data_sort_key{
+			inline bool operator() (const Node a, const Node b) {
+					return (a.dis < b.dis);
 			}
+	};
 
-			if(!contains(e[1]))
-					unseen_neighbours.push_back(e[1]);
-		}
-	}
-
-	if (unseen_neighbours.size()) {
-		for(int i = 1; i < unseen_neighbours.size(); ++i) {
-			crawlers.push_back(Crawler(unseen_neighbours[i], _path));
-			seen.push_back(unseen_neighbours[i]);
-		}
-		_node = unseen_neighbours[0];
-		_path.push_back(_node);
-	} else {
-		active = false;
-	}
-
-	return false;
+	std::sort(data.begin(), data.end(), data_sort_key());
 }
+
+
+void Queue::push(Node n){
+	data.push_back(n);
+}
+
+Node Queue::pop() {
+	Node n = data[0];
+	data.erase(data.begin());
+	return n;
+}
+
+
+vector<vector<int>> edges;
+vector<int> distances;
+int target;
 
 
 int main(int argc, char *argv[]) {
-	int node_n, start;
-	cin >> node_n;
+	int vertex_n, start;
+	cin >> vertex_n;
 	cin >> start >> target;
 
-	string line;
-	int a,b;
-	getline(cin, line); //TRASH FIRST LINE
-	while(getline(cin, line)) {
-		sscanf(line.data(), "%d %d\n", &a, &b);
-		vector<int> edge = {a,b};
-		edges.push_back(edge);
+	{
+		string line;
+		int a,b;
+		getline(cin, line); //TRASH FIRST LINE
+		while(getline(cin, line)) {
+			sscanf(line.data(), "%d %d\n", &a, &b);
+			vector<int> edge = {a,b};
+			edges.push_back(edge);
+		}
 	}
 
-	sort(edges.begin(), edges.end(), sort_edges_key());
+	//sort(edges.begin(), edges.end(), sort_edges_key());
+
+	for(int i = 0; i < vertex_n; ++i) {
+		if (i == start)
+			distances.push_back(0);
+		else
+			distances.push_back(-1);
+	}
 
 	if (start == target) {
 		cout << start;
 	} else {
-		crawlers.push_back(Crawler(start));
+		Queue q(Node(start, 0));
 
-		bool found;
-		while (true){
-			for(int i = 0; i < crawlers.size(); ++i){
-				if (crawlers[i].active) {
-					found = crawlers[i].step();
-					if (found) break;
-				}else{
-					crawlers.erase(crawlers.begin() + i);
+		bool found = false;
+		while (!found){
+			Node n = q.pop();
+			for(auto e : edges) {
+				if (e[0] == n.id) {
+					if(e[1] == target) {
+						for(auto v: n.path) 
+							cout << v << " ";
+						cout << target;
+						found = true;
+						break;
+					} else {
+						if (distances[e[1]] == -1) {
+							q.push(Node(e[1], n.dis+1, n.path));
+							q.sort();
+						}
+					}
 				}
 			}
-			if(found) break;
 		}
 	}
-
 	return 0;
 }
-
