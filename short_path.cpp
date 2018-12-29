@@ -70,13 +70,18 @@ void Queue::push(Node n){
 }
 
 Node Queue::pop() {
-	Node n = data[0];
-	data.erase(data.begin());
-	return n;
+	if (data.empty() == false) {
+		Node n = data[0];
+		data.erase(data.begin());
+		return n;
+	} else {
+		cout << "queue empty" << endl;
+	}
 }
 
 
 vector<vector<int>> edges;
+vector<vector<int>> adj_list;
 vector<int> distances;
 int target;
 
@@ -97,8 +102,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	//sort(edges.begin(), edges.end(), sort_edges_key());
+	for(int i = 0; i < vertex_n; ++i)
+		adj_list.push_back({});
 
+	for(auto e : edges)
+		adj_list[e[0]].push_back(e[1]);
+	
 	for(int i = 0; i < vertex_n; ++i) {
 		if (i == start)
 			distances.push_back(0);
@@ -112,21 +121,21 @@ int main(int argc, char *argv[]) {
 		Queue q(Node(start, 0));
 
 		bool found = false;
-		while (!found){
+		while (!found) {
 			Node n = q.pop();
-			for(auto e : edges) {
-				if (e[0] == n.id) {
-					if(e[1] == target) {
-						for(auto v: n.path) 
-							cout << v << " ";
-						cout << target;
-						found = true;
-						break;
-					} else {
-						if (distances[e[1]] == -1) {
-							q.push(Node(e[1], n.dis+1, n.path));
-							q.sort();
-						}
+
+			for(int connected : adj_list[n.id]) {
+				if (connected == target) {
+					for(auto v: n.path) 
+						cout << v << " ";
+					cout << target;
+					found = true;
+					break;
+				} else {
+					if (distances[connected] == -1) {
+						distances[connected] = n.dis + 1;
+						q.push(Node(connected, n.dis+1, n.path));
+						q.sort();
 					}
 				}
 			}
