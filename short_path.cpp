@@ -3,8 +3,7 @@
 using namespace std;
 
 vector<double> construct_times;
-vector<double> sort_times;
-vector<double> pop_times;
+vector<double> sort_times; vector<double> pop_times;
 vector<double> push_times;
 vector<double> loop_times;
 
@@ -71,7 +70,7 @@ struct Node {
 
 class Queue {
 	public:
-		Node data[200000];
+		Node data[1000001];
 		int32_t begin, end;
 
 		//constructor
@@ -200,6 +199,11 @@ int main(int argc, char *argv[]) {
 				for(int32_t connected : adj_list[n->id]) {
 					if (connected == target) {
 						foundOut(n);
+						//cout << endl;
+						//cout << sizeof(q.data) << endl;
+						//cout << sizeof(adj_list) << endl;
+						//cout << sizeof(notseen) << endl;
+						//cout << (sizeof(q.data) + sizeof(adj_list) + sizeof(notseen)) << endl;
 						found = true;
 						break;
 					} else if (notseen[connected]){
@@ -211,7 +215,6 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		//cout << endl;
 		//cout << "avg loop time: " << avgVec(&loop_times) << endl;
 		//cout << "loop count: " << loop_count << "  total: " << totalVec(&loop_times) << endl;
 
