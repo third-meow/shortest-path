@@ -6,6 +6,7 @@ vector<double> construct_times;
 vector<double> sort_times;
 vector<double> pop_times;
 vector<double> push_times;
+vector<double> loop_times;
 
 struct Timer {
 	vector<double>* vec;
@@ -90,13 +91,14 @@ class Queue {
 };
 
 Queue::Queue(Node init_node) {
-	//Timer t(&construct_times);
+	Timer t("queue construct");
 	data = {init_node};
 	data[0].path = {data[0].id};
+	data.reserve(1000000);
 }
 
 void Queue::sort() {
-	//Timer t(&sort_times);
+	Timer t(&sort_times);
 	struct data_sort_key{
 			inline bool operator() (const Node a, const Node b) {
 					return (a.dis > b.dis);
@@ -108,12 +110,12 @@ void Queue::sort() {
 
 
 void Queue::push(Node n){
-	//Timer t(&push_times);
+	Timer t(&push_times);
 	data.push_back(n);
 }
 
 Node Queue::pop() {
-	//Timer t(&pop_times);
+	Timer t(&pop_times);
 	Node n = data.back();
 	data.pop_back();
 	return n;
@@ -122,7 +124,6 @@ Node Queue::pop() {
 
 vector<vector<int>> edges;
 vector<vector<int>> adj_list;
-vector<int> distances;
 int target;
 
 double avgVec(vector<double>* vec) {
@@ -135,6 +136,15 @@ double avgVec(vector<double>* vec) {
 	return total / len;
 }
 
+double totalVec(vector<double>* vec) {
+	double total;
+
+	for(auto e : *vec)
+		total += e;
+
+	return total;
+}
+
 void timehere() {
 
 	unsigned long long u64useconds;
@@ -143,7 +153,7 @@ void timehere() {
 	gettimeofday(&tv,NULL);
 	u64useconds = (1000000*tv.tv_sec) + tv.tv_usec;
 
-	//cout << u64useconds << endl;
+	cout << u64useconds << endl;
 }
 
 
@@ -151,10 +161,14 @@ int main(int argc, char *argv[]) {
 
 	int vertex_n, start;
 	cin >> vertex_n;
+	bool notseen[vertex_n];
+	for(int i = 0; i < vertex_n; ++i)
+		notseen[i] = true;
+
 	cin >> start >> target;
 
 	{
-		//Timer t("read-input");
+		Timer t("read-input");
 		string line;
 		int a,b;
 		getline(cin, line); //TRASH FIRST LINE
@@ -166,24 +180,13 @@ int main(int argc, char *argv[]) {
 	}
 
 	{
-		//Timer t("build adj list");
+		Timer t("build adj list");
 		for(int i = 0; i < vertex_n; ++i)
 			adj_list.push_back({});
 
 		for(auto e : edges)
 			adj_list[e[0]].push_back(e[1]);
 	}
-
-	{
-		//Timer t("build distances list");
-		for(int i = 0; i < vertex_n; ++i) {
-			if (i == start)
-				distances.push_back(0);
-			else
-				distances.push_back(-1);
-		}
-	}
-
 
 
 	long loop_count = 0;
@@ -192,45 +195,47 @@ int main(int argc, char *argv[]) {
 		cout << start << endl;
 	} else {
 		{
-			//Timer t("shortest path algo");
+			Timer t("shortest path algo");
 			Queue q(Node(start, 0));
 
 			bool found = false;
 			while (!found) {
-				//if (loop_count % 1000 == 0)
-					////Timer t("loop");
+				Timer t(&loop_times);
 
-				++loop_count;
 				Node n = q.pop();
 
 
 				for(int connected : adj_list[n.id]) {
 					if (connected == target) {
-						for(auto v: n.path) 
-							cout << v << " ";
-						cout << target;
-						//cout << "found" << endl;
+						//for(auto v: n.path) 
+							//cout << v << " ";
+						//cout << target;
+						cout << "found" << endl;
 						found = true;
 						break;
-					} else if (distances[connected] == -1){
-						distances[connected] = n.dis + 1;
+					} else if (notseen[connected]){
+						notseen[connected] = false;
 						q.push(Node(connected, n.dis+1, n.path));
 					}
 				}
 				q.sort();
+				++loop_count;
 			}
 		}
 
-		//cout << "loop count: " << loop_count << endl;
+		cout << endl;
+		cout << "avg loop time: " << avgVec(&loop_times) << endl;
+		cout << "loop count: " << loop_count << "  total: " << totalVec(&loop_times) << endl;
 
-		//cout << "avg sort time: " << avgVec(&sort_times) << endl;
-		//cout << "sorts: " << sort_times.size() << " total : " << sort_times.size()*avgVec(&sort_times) << endl;
+		cout << "avg sort time: " << avgVec(&sort_times) << endl;
+		cout << "sorts: " << sort_times.size() << " total : " << totalVec(&sort_times) << endl;
 
-		//cout << "avg pop time: " << avgVec(&pop_times) << endl;
-		//cout << "pops: " << pop_times.size() << " total : " << pop_times.size()*avgVec(&pop_times)  << endl;
+		cout << "avg pop time: " << avgVec(&pop_times) << endl;
+		cout << "pops: " << pop_times.size() << " total : " << totalVec(&pop_times)  << endl;
 
-		//cout << "avg push time: " << avgVec(&push_times) << endl;
-		//cout << "pushs: " << push_times.size() << " total : " << push_times.size()*avgVec(&push_times) << endl;
+		cout << "avg push time: " << avgVec(&push_times) << endl;
+		cout << "pushs: " << push_times.size() << " total : " << totalVec(&push_times) << endl;
+
 	}
 	return 0;
 }
