@@ -3,8 +3,7 @@
 using namespace std;
 
 vector<double> construct_times;
-vector<double> sort_times;
-vector<double> pop_times;
+vector<double> sort_times; vector<double> pop_times;
 vector<double> push_times;
 vector<double> loop_times;
 
@@ -43,7 +42,7 @@ struct Timer {
 };
 
 struct sort_edges_key{
-    inline bool operator() (const vector<int32_t> a, const vector<int> b) {
+    inline bool operator() (const vector<int> a, const vector<int> b) {
 			if (a[0] == b[0]) {
 				return (a[1] < b[1]);
 			} else {
@@ -52,61 +51,45 @@ struct sort_edges_key{
     }
 };
 
-struct Node {
-		int32_t id;
-		Node* prev;
-		Node();
-		Node(int32_t);
-
-};
-
-Node::Node() {
-	id = -1;
-	prev = nullptr;
-}
-
-Node::Node(int32_t init_id) {
-	id = init_id;
-	prev = nullptr;
-}
-
 class Queue {
 	public:
-		Node data[1000001];
-		int32_t begin, end;
+		int ids[1000001];
+		int prevs[1000001];
+
+		int begin, end;
 
 		//constructor
-		Queue(Node);
+		Queue(int);
 		//adds element to back
-		void push(Node);
+		void push(int);
 		//returns (and removes) element at front
-		Node* pop();
+		int pop();
 };
 
-Queue::Queue(Node init_node) {
-	data[0] = init_node;
-	data[0].prev = &data[0];
+Queue::Queue(int id) {
 	begin = 0;
 	end = 1;
+	ids[begin] = id;
+	prevs[begin] = begin;
 }
 
-void Queue::push(Node n) {
+void Queue::push(int id) {
 	//Timer t(&push_times);
-	n.prev = &data[begin-1];
-	data[end] = n;
+	prevs[end] = begin-1;
+	ids[end] = id;
 	++end;
 }
 
-Node* Queue::pop() {
+int Queue::pop() {
 	//Timer t(&pop_times);
 	++begin;
-	return &data[begin-1];
+	return ids[begin-1];
 }
 
 
-vector<vector<int32_t>> edges;
-vector<vector<int32_t>> adj_list;
-int32_t target, start;
+vector<vector<int>> edges;
+vector<vector<int>> adj_list;
+int target, start;
 
 double avgVec(vector<double>* vec) {
 	double total;
@@ -138,34 +121,42 @@ void timehere() {
 	//cout << u64useconds << endl;
 }
 
-void foundOut(Node* ogn) {
-	Node* n = ogn;
-	int dis = 0;
-	while (n->prev != n) {
+void foundOut(Queue* q, int addr) {
+	if (addr != target)
+		cout << "foundOut run wrong" << endl;
+
+	int dis = 1;
+	int n = addr;
+
+	while(true) {
+		n = q->prevs[n];
 		++dis;
-		n = n->prev;
+
+		if (n == q->prevs[n])
+			break;
 	}
+
+	cout << dis << endl;
 
 	int path[dis];
-	n = ogn; 
-
+	n = addr;
 	for(int i = 0; i < dis; ++i) {
-		path[i] = n->id;
-		n = n->prev;
+		path[i] = q->ids[n];
+		n = q->prevs[n];
 	}
 
-	cout << start << " ";
-	for(int i = (dis-1); i >= 0; --i)
+
+	for(int i = (dis-1); i > 0; --i)
 		cout << path[i] << " ";
-	cout << target;
+	cout << path[0];
 }
 
 int main(int argc, char *argv[]) {
 
-	int32_t vertex_n;
+	int vertex_n;
 	cin >> vertex_n;
 	bool notseen[vertex_n];
-	for(int32_t i = 0; i < vertex_n; ++i)
+	for(int i = 0; i < vertex_n; ++i)
 		notseen[i] = true;
 
 	cin >> start >> target;
@@ -173,18 +164,18 @@ int main(int argc, char *argv[]) {
 	{
 		//Timer t("read-input");
 		string line;
-		int32_t a,b;
+		int a,b;
 		getline(cin, line); //TRASH FIRST LINE
 		while(getline(cin, line)) {
 			sscanf(line.data(), "%d %d\n", &a, &b);
-			vector<int32_t> edge = {a,b};
+			vector<int> edge = {a,b};
 			edges.push_back(edge);
 		}
 	}
 
 	{
 		//Timer t("build adj list");
-		for(int32_t i = 0; i < vertex_n; ++i)
+		for(int i = 0; i < vertex_n; ++i)
 			adj_list.push_back({});
 
 		for(auto e : edges)
@@ -198,20 +189,19 @@ int main(int argc, char *argv[]) {
 	} else {
 		{
 			//Timer t("shortest path algo");
-			Node sn;
-			sn.id = start;
-			Queue q(sn);
+			Queue q(start);
 
 			bool found = false;
 			while (!found) {
 				//Timer t(&loop_times);
 
-				Node* n = q.pop();
+				int n = q.pop();
 
 
-				for(int32_t connected : adj_list[n->id]) {
+				for(int connected : adj_list[n]) {
 					if (connected == target) {
-						foundOut(n);
+						q.push(connected);
+						foundOut(&q, connected);
 						//cout << endl;
 						//cout << sizeof(q.data) << endl;
 						//cout << sizeof(adj_list) << endl;
@@ -221,7 +211,7 @@ int main(int argc, char *argv[]) {
 						break;
 					} else if (notseen[connected]){
 						notseen[connected] = false;
-						q.push(Node(connected));
+						q.push(connected);
 					}
 				}
 				++loop_count;
