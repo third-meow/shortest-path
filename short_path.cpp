@@ -3,7 +3,8 @@
 using namespace std;
 
 vector<double> construct_times;
-vector<double> sort_times; vector<double> pop_times;
+vector<double> sort_times;
+vector<double> pop_times;
 vector<double> push_times;
 vector<double> loop_times;
 
@@ -12,7 +13,7 @@ struct Timer {
 	string name;
 	chrono::time_point<chrono::high_resolution_clock> start;
 	chrono::time_point<chrono::high_resolution_clock> end;
-	chrono::duration<double> duration; 
+	chrono::duration<double> duration;
 
 	Timer() {
 		name = "unnamed";
@@ -53,30 +54,31 @@ struct sort_edges_key{
 
 struct Node {
 		int32_t id;
-		int32_t dis;
 		Node* prev;
+		Node();
+		Node(int32_t);
 
-		Node() {
-			id = dis = -1;
-			prev = nullptr;
-		}
-
-		Node(int32_t init_id, int32_t init_dis) {
-			id = init_id;
-			dis = init_dis;
-			prev = nullptr;
-		}
 };
+
+Node::Node() {
+	id = -1;
+	prev = nullptr;
+}
+
+Node::Node(int32_t init_id) {
+	id = init_id;
+	prev = nullptr;
+}
 
 class Queue {
 	public:
-		Node data[1000001];
+		Node data[100001];
 		int32_t begin, end;
 
 		//constructor
-		Queue(Node init_node);
+		Queue(Node);
 		//adds element to back
-		void push(Node n);
+		void push(Node);
 		//returns (and removes) element at front
 		Node* pop();
 };
@@ -136,13 +138,22 @@ void timehere() {
 	//cout << u64useconds << endl;
 }
 
-void foundOut(Node* n) {
-	int dis = n->dis;
+void foundOut(Node* ogn) {
+	Node* n = ogn;
+	int dis = 0;
+	while (n->prev != n) {
+		++dis;
+		n = n->prev;
+	}
+
 	int path[dis];
+	n = ogn; 
+
 	for(int i = 0; i < dis; ++i) {
 		path[i] = n->id;
 		n = n->prev;
 	}
+
 	cout << start << " ";
 	for(int i = (dis-1); i >= 0; --i)
 		cout << path[i] << " ";
@@ -187,7 +198,9 @@ int main(int argc, char *argv[]) {
 	} else {
 		{
 			//Timer t("shortest path algo");
-			Queue q(Node(start, 0));
+			Node sn;
+			sn.id = start;
+			Queue q(sn);
 
 			bool found = false;
 			while (!found) {
@@ -208,7 +221,7 @@ int main(int argc, char *argv[]) {
 						break;
 					} else if (notseen[connected]){
 						notseen[connected] = false;
-						q.push(Node(connected, n->dis+1));
+						q.push(Node(connected));
 					}
 				}
 				++loop_count;
