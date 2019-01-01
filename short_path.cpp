@@ -72,7 +72,7 @@ Node::Node(int32_t init_id) {
 
 class Queue {
 	public:
-		Node data[100001];
+		Node data[1000001];
 		int32_t begin, end;
 
 		//constructor
