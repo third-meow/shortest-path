@@ -18,7 +18,7 @@ def star():
     return edges, 0, node_n, node_n
 
 
-edges, start, target, node_n = star()
+edges, start, target, node_n = simple()
 
 with open('data.txt', 'w') as f:
     f.write(f'{node_n}\n')
